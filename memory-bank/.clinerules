@@ -1,5 +1,16 @@
 # Cline Project Intelligence
 
+## Frontend Development Rules
+
+### File Organization
+- Use SCSS for styling
+- Create separate files for component parts:
+  - `.html` for templates
+  - `.ts` for component logic
+  - `.scss` for component styles
+- Place each component in its own directory
+- Name popup components with 'Popup' prefix (e.g., `PopupConfirm`, `PopupSettings`)
+
 ## Project Context
 - Chat Web App UI implementation based on Figma design
 - Angular-based frontend development
