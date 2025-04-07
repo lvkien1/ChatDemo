@@ -1,161 +1,95 @@
-# System Patterns and Architecture
+# System Design Patterns
 
-## Angular Architecture
+## Component Structure
+- Standalone components with explicit imports
+- Feature-based folder structure
+- Shared components in shared module
+- Container/Presentation pattern where appropriate
 
-### 1. Component Architecture
-```
-app/
-├── core/           # Singleton services, app-level modules
-├── shared/         # Reusable components, pipes, directives
-├── features/       # Feature modules
-└── layout/         # App layout components
-```
+## State Management
+- NGRX store for global state
+- Strong typing with interfaces
+- Action creators with proper typing
+- Selectors with memoization
+- Effects for side effects
+- Async data handling with observables
 
-### 2. Component Patterns
+## Type Safety
+1. Message Types:
+   ```typescript
+   type MessageType = 'text' | 'file' | 'image' | 'system';
+   type MessageStatus = 'sent' | 'delivered' | 'read' | 'failed';
+   ```
 
-#### Smart vs. Presentational Components
-- Smart Components
-  - Handle data fetching
-  - Manage state
-  - Contain business logic
-- Presentational Components
-  - Display data
-  - Emit user actions
-  - Style-focused
+2. File Handling:
+   ```typescript
+   interface FileMessage extends Message {
+     type: 'file' | 'image';
+     attachments: MessageAttachment[];
+   }
+   ```
 
-#### Component Communication
-- Input/Output decorators
-- Service-based state management
-- Event bus for cross-component communication
+3. Type Guards:
+   ```typescript
+   function isFileMessage(message: Message): message is FileMessage {
+     return ['file', 'image'].includes(message.type) && 
+            Array.isArray(message.attachments) && 
+            message.attachments.length > 0;
+   }
+   ```
 
-### 3. State Management
+## UI/UX Patterns
+- Material Design icons
+- Consistent spacing and layout
+- Responsive design principles
+- Loading states for async operations
+- Error boundaries and fallbacks
 
-#### NgRx Store
-```typescript
-// State structure
-interface AppState {
-  chat: ChatState;
-  users: UserState;
-  files: FileState;
-  ui: UIState;
-}
-```
+## Service Patterns
+1. Mock Implementation:
+   ```typescript
+   // Mock service with delay
+   return of(result).pipe(delay(100));
+   ```
 
-#### State Patterns
-- Command Query Responsibility Segregation (CQRS)
-- Event Sourcing
-- Optimistic Updates
+2. WebSocket Handling:
+   ```typescript
+   // Subject-based event handling
+   private messages$ = new Subject<Message>();
+   ```
 
-### 4. Data Flow Patterns
-
-#### Real-time Communication
-- WebSocket connection management
-- Message queue handling
-- Reconnection strategies
-- Offline support
-
-#### File Handling
-- Chunked upload pattern
-- Progressive download
-- Caching strategies
-
-## Design Patterns
-
-### 1. Behavioral Patterns
-- Observer Pattern (RxJS)
-- Strategy Pattern
-- Command Pattern
-- Mediator Pattern
-
-### 2. Structural Patterns
-- Facade Pattern
-- Adapter Pattern
-- Composite Pattern
-- Decorator Pattern
-
-### 3. Module Patterns
-- Feature Module Pattern
-- Shared Module Pattern
-- Core Module Pattern
-
-## Code Organization
-
-### 1. File Naming Conventions
-```
-feature-name/
-├── components/
-│   ├── feature-name.component.ts
-│   ├── feature-name.component.html
-│   └── feature-name.component.scss
-├── services/
-├── models/
-└── store/
-```
-
-### 2. Code Style
-- Angular Style Guide adherence
-- Consistent naming conventions
-- Single Responsibility Principle
-- Interface-first approach
-
-## Testing Strategy
-
-### 1. Unit Testing
-- Component testing
-- Service testing
-- State management testing
-- Isolated tests
-
-### 2. Integration Testing
-- Component integration
-- Service integration
-- E2E scenarios
+3. File Upload:
+   ```typescript
+   // File handling with observables
+   uploadFile(chatId: string, file: File): Observable<Message>
+   ```
 
 ## Error Handling
+- Type-safe error objects
+- Global error boundaries
+- Service-level error handling
+- Action-based error management
 
-### 1. Error Patterns
-- Global error handling
-- Feature-level error handling
-- User feedback patterns
-
-### 2. Recovery Strategies
-- Retry mechanisms
-- Fallback patterns
-- Error boundaries
+## Testing Strategy
+- Unit tests for services
+- Component testing with TestBed
+- E2E testing for critical flows
+- Mock service patterns
 
 ## Performance Patterns
+- Async pipes in templates
+- OnPush change detection
+- Memoized selectors
+- Lazy loading for features
+- Proper unsubscribe patterns
 
-### 1. Loading Strategies
-- Lazy loading
-- Preloading
-- Progressive loading
-
-### 2. Optimization Techniques
-- Change Detection optimization
-- Memory management
-- Bundle optimization
-- Cache strategies
-
-## Security Patterns
-
-### 1. Authentication
-- JWT handling
-- Session management
-- Security contexts
-
-### 2. Data Protection
-- XSS prevention
-- CSRF protection
-- Secure storage patterns
-
-## Accessibility Patterns
-
-### 1. ARIA Implementation
-- Role attributes
-- State management
-- Focus management
-
-### 2. Keyboard Navigation
-- Focus trap
-- Shortcut handling
-- Navigation patterns
+## Code Organization
+- Feature modules
+- Core services
+- Shared components
+- Model interfaces
+- Store organization
+  - Actions
+  - Effects
+  - Reducers
+  - Selectors

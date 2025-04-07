@@ -1,138 +1,37 @@
-# Active Context
+# Active Development Context
 
-## Current Development Phase
-Initial project setup and documentation phase
+## Current Focus
+- File handling and preview functionality
+- Type safety improvements in state management
+- Chat service message handling
 
-## Active Tasks
+## Latest Changes
+1. Enhanced message model:
+   - Added proper typing for message types
+   - Implemented file message interface
+   - Added message status tracking
+   - Improved attachment handling
 
-### Documentation
-- [x] Created project brief
-- [x] Defined product context
-- [x] Established system patterns
-- [x] Documented technical context
-- [ ] Initialize Angular project
-- [ ] Set up development environment
+2. File handling improvements:
+   - Implemented FilesList component
+   - Added file preview functionality
+   - Created file type helper functions
+   - Added MIME type support
 
-### Design Implementation Planning
-- [ ] Extract design tokens from Figma
-- [ ] Create component hierarchy
-- [ ] Define shared styles
-- [ ] Plan responsive layouts
+3. State Management:
+   - Fixed type safety in chat reducer
+   - Improved selectors performance
+   - Added proper error handling
+   - Enhanced action typing
 
-### Next Development Steps
-1. Create Angular project structure
-2. Set up SCSS architecture
-3. Implement core layout components
-4. Develop shared UI components
+## Immediate TODOs
+1. Complete WebSocket reconnection strategy
+2. Add unit tests for new components
+3. Implement remaining file upload UI components
+4. Add proper error boundaries and loading states
 
-## Recent Decisions
-
-### Architecture Decisions
-1. Using Angular 16+ for modern features and performance
-2. Implementing NgRx for state management
-3. Utilizing Angular Material as UI foundation
-4. Following container/presentational component pattern
-
-### Design Decisions
-1. Following Figma design system precisely
-2. Implementing custom theming on top of Angular Material
-3. Using SCSS modules for component styles
-4. Creating shared component library
-
-## Active Considerations
-
-### Technical Considerations
-- Performance optimization strategies
-- Real-time communication implementation
-- File handling approaches
-- State management patterns
-
-### Design Considerations
-- Component reusability
-- Responsive behavior
-- Accessibility compliance
-- Animation implementations
-
-## Current Challenges
-
-### Technical Challenges
-- Setting up efficient development environment
-- Planning scalable architecture
-- Implementing real-time features
-- Managing state complexity
-
-### Design Challenges
-- Maintaining design consistency
-- Implementing responsive layouts
-- Ensuring accessibility
-- Managing component variations
-
-## Immediate Focus
-
-### Priority Tasks
-1. Angular project initialization
-2. Development environment setup
-3. Core component creation
-4. Basic routing implementation
-
-### Upcoming Reviews
-- Architecture review
-- Component structure review
-- Design system implementation review
-- Code style guide review
-
-## Recent Updates
-
-### Added Documentation
-- Project brief
-- Product context
-- System patterns
-- Technical context
-
-### Planned Updates
-- Development setup guide
-- Component documentation
-- Style guide
-- Testing strategy
-
-## Notes & Observations
-
-### Technical Notes
-- Need to carefully plan NgRx implementation
-- Consider WebSocket integration early
-- Plan for scalable file structure
-- Consider performance from start
-
-### Design Notes
-- Follow Figma measurements precisely
-- Maintain consistent spacing system
-- Implement responsive breakpoints
-- Document component variants
-
-## Questions to Address
-
-### Technical Questions
-- Best approach for WebSocket implementation?
-- Optimal state management structure?
-- File upload handling strategy?
-- Caching strategy?
-
-### Design Questions
-- Mobile navigation approach?
-- Responsive breakpoint specific behavior?
-- Animation implementation details?
-- Accessibility considerations?
-
-## Risk Management
-
-### Current Risks
-- Complex state management
-- Real-time performance
-- File handling scalability
-- Cross-browser compatibility
-
-### Mitigation Strategies
-- Early architecture planning
-- Regular performance testing
-- Progressive enhancement
-- Browser testing plan
+## Technical Notes
+- Using async pipes for better performance
+- Proper type casting for message status
+- Structured shared helper functions
+- Improved state typing and interfaces
