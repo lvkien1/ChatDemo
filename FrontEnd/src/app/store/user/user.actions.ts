@@ -1,41 +1,54 @@
-import { createActionGroup, props, emptyProps } from '@ngrx/store';
-import { User, UserStatus, UserSettings } from '../../core/models/user.model';
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
+import { User, UserProfile, UserSettings, UpdateSettingsDto } from '../../core/models/user.model';
 
 export const UserActions = createActionGroup({
   source: 'User',
   events: {
     // Load Current User
     'Load Current User': emptyProps(),
-    'Load Current User Success': props<{ user: User }>(),
-    'Load Current User Failure': props<{ error: string }>(),
+    'Load Current User Success': props<{ user: UserProfile }>(),
+    'Load Current User Failure': props<{ error: any }>(),
+
+    // Load All Users
+    'Load Users': emptyProps(),
+    'Load Users Success': props<{ users: User[] }>(),
+    'Load Users Failure': props<{ error: any }>(),
+
+    // Load User by ID
+    'Load User By Id': props<{ userId: string }>(),
+    'Load User By Id Success': props<{ user: User }>(),
+    'Load User By Id Failure': props<{ error: any }>(),
 
     // Update User
-    'Update User': props<{ id: string; data: Partial<User> }>(),
+    'Update User': props<{ userId: string; changes: Partial<User> }>(),
     'Update User Success': props<{ user: User }>(),
-    'Update User Failure': props<{ error: string }>(),
-
-    // Update Avatar
-    'Update Avatar': props<{ id: string; file: File }>(),
-    'Update Avatar Success': props<{ user: User }>(),
-    'Update Avatar Failure': props<{ error: string }>(),
+    'Update User Failure': props<{ error: any }>(),
 
     // Update Settings
-    'Update Settings': props<{ settings: Partial<UserSettings> }>(),
+    'Update Settings': props<{ userId: string; settings: UpdateSettingsDto }>(),
     'Update Settings Success': props<{ settings: UserSettings }>(),
-    'Update Settings Failure': props<{ error: string }>(),
+    'Update Settings Failure': props<{ error: any }>(),
 
-    // Update Presence
-    'Update Presence': props<{ status: UserStatus }>(),
-    'Update Presence Success': props<{ status: UserStatus }>(),
-    'Update Presence Failure': props<{ error: string }>(),
+    // Update Profile
+    'Update Profile': props<{ userId: string; changes: Partial<User> }>(),
+    'Update Profile Success': props<{ user: User }>(),
+    'Update Profile Failure': props<{ error: any }>(),
 
-    // Presence Changed
-    'Presence Changed': props<{ statuses: UserStatus[] }>(),
-
-    // Set Theme
+    // Theme
     'Set Theme': props<{ theme: 'light' | 'dark' }>(),
 
-    // Set Online Status
-    'Set Online Status': props<{ isOnline: boolean }>()
+    // Presence
+    'Update Presence': props<{ status: 'online' | 'away' | 'offline' }>(),
+    'Update Presence Success': props<{ status: { userId: string; status: string } }>(),
+    'Update Presence Failure': props<{ error: any }>(),
+
+    // User Status
+    'Update User Status': props<{ userId: string; isOnline: boolean }>(),
+    'Set Connection Status': props<{ isConnected: boolean }>(),
+
+    // Upload Avatar
+    'Upload Avatar': props<{ userId: string; file: File }>(),
+    'Upload Avatar Success': props<{ user: User }>(),
+    'Upload Avatar Failure': props<{ error: any }>()
   }
 });

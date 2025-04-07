@@ -1,55 +1,51 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { ChatState } from './chat.reducer';
+import { Message, isFileMessage } from '../../core/models/message.model';
 
 export const selectChatState = createFeatureSelector<ChatState>('chat');
 
 export const selectAllChats = createSelector(
   selectChatState,
-  state => state.chats
+  (state) => state.chats
 );
 
-export const selectSelectedChatId = createSelector(
+export const selectCurrentChat = createSelector(
   selectChatState,
-  state => state.selectedChatId
+  (state) => state.chats.find(chat => chat.id === state.currentChatId)
 );
 
-export const selectSelectedChat = createSelector(
+export const selectCurrentChatId = createSelector(
   selectChatState,
-  state => state.selectedChatId ? state.chats.find(chat => chat.id === state.selectedChatId) : null
+  (state) => state.currentChatId
+);
+
+export const selectChatMessages = createSelector(
+  selectChatState,
+  (state) => state.messages
 );
 
 export const selectCurrentChatMessages = createSelector(
-  selectChatState,
-  state => state.selectedChatId ? 
-    state.messages.filter(msg => msg.chatId === state.selectedChatId) : []
+  selectChatMessages,
+  selectCurrentChatId,
+  (messages, chatId) => messages.filter(message => message.chatId === chatId)
 );
 
-export const selectUnreadCount = createSelector(
+export const selectAllFileMessages = createSelector(
+  selectChatMessages,
+  (messages) => messages.filter(isFileMessage)
+);
+
+export const selectIsLoading = createSelector(
   selectChatState,
-  state => state.chats.reduce((total, chat) => total + (chat.unreadCount || 0), 0)
+  (state) => state.loading
+);
+
+export const selectError = createSelector(
+  selectChatState,
+  (state) => state.error
 );
 
 export const selectTypingUsers = createSelector(
-  selectChatState,
-  state => state.typingUsers
-);
-
-export const selectTypingUsersForCurrentChat = createSelector(
-  selectTypingUsers,
-  selectSelectedChatId,
-  (typingUsers, chatId) => chatId ? 
-    Object.entries(typingUsers)
-      .filter(([_, data]) => data.chatId === chatId && data.isTyping)
-      .map(([userId]) => userId) : 
-    []
-);
-
-export const selectIsChatLoading = createSelector(
-  selectChatState,
-  state => state.loading
-);
-
-export const selectChatError = createSelector(
-  selectChatState,
-  state => state.error
+  selectCurrentChat,
+  (chat) => chat?.typingUsers || []
 );

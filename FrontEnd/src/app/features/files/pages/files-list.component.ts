@@ -1,157 +1,126 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { Message, FileAttachment } from '../../../core/models/message.model';
-import { selectAllMessages } from '../../../store/chat';
 
-interface FileAttachmentWithChat extends FileAttachment {
+import { Message, MessageAttachment, FileMessage, isFileMessage, getFileIcon } from '../../../core/models/message.model';
+import * as ChatSelectors from '../../../store/chat/chat.selectors';
+
+interface FileEntry {
   chatId: string;
+  messageId: string;
+  file: MessageAttachment;
+  timestamp: Date;
+  senderId: string;
 }
 
 @Component({
   selector: 'app-files-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    MatCardModule,
-    MatIconModule,
-    MatButtonModule
-  ],
+  imports: [CommonModule],
   template: `
     <div class="files-container">
-      <header class="files-header">
-        <h1>Files</h1>
-      </header>
-
-      <div class="files-grid">
-        <ng-container *ngFor="let file of files$ | async">
-          <mat-card class="file-card">
-            <mat-card-content>
-              <div class="file-icon">
-                <mat-icon>{{ getFileIcon(file.type) }}</mat-icon>
-              </div>
-              <div class="file-info">
-                <h3 class="file-name">{{ file.name }}</h3>
-                <span class="file-size">{{ formatFileSize(file.size) }}</span>
-              </div>
-            </mat-card-content>
-            <mat-card-actions>
-              <a mat-button [href]="file.url" target="_blank" download>
-                <mat-icon>download</mat-icon>
-                Download
-              </a>
-              <a mat-button [routerLink]="['/chat', file.chatId]">
-                <mat-icon>chat</mat-icon>
-                View in Chat
-              </a>
-            </mat-card-actions>
-          </mat-card>
-        </ng-container>
+      <h2>Files</h2>
+      
+      <div class="files-list">
+        <div *ngFor="let entry of files$ | async" class="file-item" (click)="openFile(entry)">
+          <span class="material-icons">{{ getFileIcon(entry.file.mimeType) }}</span>
+          <div class="file-info">
+            <div class="file-name">{{ entry.file.name }}</div>
+            <div class="file-meta">
+              {{ entry.file.size | number }} bytes · 
+              {{ entry.timestamp | date:'medium' }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `,
   styles: [`
     .files-container {
-      padding: 24px;
-      height: 100%;
-      box-sizing: border-box;
-      background: #FFFFFF;
-    }
-
-    .files-header {
-      margin-bottom: 24px;
-
-      h1 {
-        font-size: 20px;
-        font-weight: 600;
+      padding: 1rem;
+      
+      h2 {
+        margin-bottom: 1rem;
       }
     }
 
-    .files-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 24px;
-    }
-
-    .file-card {
-      border-radius: 12px;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-    }
-
-    .file-icon {
+    .files-list {
       display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 48px;
-      height: 48px;
-      border-radius: 8px;
-      background: #F1F1F1;
-      margin-bottom: 16px;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
-      mat-icon {
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      background: white;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .material-icons {
         font-size: 24px;
-        width: 24px;
-        height: 24px;
-        color: #615EF0;
+        color: #666;
       }
     }
 
     .file-info {
+      flex: 1;
+      min-width: 0;
+
       .file-name {
-        margin: 0;
-        font-size: 14px;
         font-weight: 500;
-        margin-bottom: 4px;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      .file-size {
-        font-size: 12px;
+      .file-meta {
+        font-size: 0.875rem;
         color: rgba(0, 0, 0, 0.6);
       }
     }
-
-    mat-card-actions {
-      padding: 16px;
-      display: flex;
-      gap: 8px;
-    }
   `]
 })
-export class FilesListComponent {
-  files$: Observable<FileAttachmentWithChat[]>;
+export class FilesListComponent implements OnInit {
+  files$: Observable<FileEntry[]>;
 
   constructor(private store: Store) {
-    this.files$ = this.store.select(selectAllMessages).pipe(
-      map(messages => {
-        return messages
-          .filter(msg => msg.attachments && msg.attachments.length > 0)
-          .flatMap(msg => msg.attachments!.map(attachment => ({
-            ...attachment,
-            chatId: msg.chatId
-          })));
-      })
+    // Get all messages and filter file messages
+    this.files$ = this.store.select(ChatSelectors.selectAllFileMessages).pipe(
+      map((messages: Message[]) => 
+        messages.flatMap(message => {
+          if (!message.attachments) return [];
+          return message.attachments.map(attachment => ({
+            chatId: message.chatId,
+            messageId: message.id,
+            file: attachment,
+            timestamp: message.timestamp,
+            senderId: message.senderId
+          }));
+        }).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      )
     );
   }
 
-  getFileIcon(type: string): string {
-    if (type.includes('image')) return 'image';
-    if (type.includes('pdf')) return 'picture_as_pdf';
-    if (type.includes('word') || type.includes('document')) return 'description';
-    if (type.includes('spreadsheet') || type.includes('excel')) return 'table_chart';
-    return 'insert_drive_file';
+  ngOnInit(): void {
+    // No initialization needed as messages are loaded by chat feature
   }
 
-  formatFileSize(bytes: number): string {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes === 0) return '0 Byte';
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i)) + ' ' + sizes[i];
+  getFileIcon(mimeType: string): string {
+    return getFileIcon(mimeType);
+  }
+
+  openFile(entry: FileEntry): void {
+    window.open(entry.file.url, '_blank');
   }
 }

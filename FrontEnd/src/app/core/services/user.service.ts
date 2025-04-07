@@ -1,101 +1,131 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, map } from 'rxjs';
-import { User, UserStatus } from '../models/user.model';
+import { Observable, of, delay } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { 
+  User, 
+  UserProfile,
+  UserSettings, 
+  UpdateSettingsDto,
+  DEFAULT_USER_SETTINGS
+} from '../models/user.model';
 import { environment } from '../../../environments/environment';
-import { WebsocketService } from './websocket.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
   private apiUrl = `${environment.apiUrl}/users`;
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  private onlineUsers = new BehaviorSubject<UserStatus[]>([]);
+  private mockUsers: Map<string, User> = new Map();
 
-  constructor(
-    private http: HttpClient,
-    private websocketService: WebsocketService
-  ) {
-    // Subscribe to presence changes from WebSocket
-    this.websocketService.onPresenceChange().subscribe(statuses => {
-      this.onlineUsers.next(statuses);
-    });
+  constructor(private http: HttpClient) {
+    this.initializeMockData();
   }
 
-  getCurrentUser(): Observable<User | null> {
-    return this.currentUserSubject.asObservable();
+  getCurrentUser(): Observable<UserProfile> {
+    // Mock implementation
+    return of<UserProfile>({
+      id: 'current-user',
+      name: 'Current User',
+      email: 'current@example.com',
+      avatar: '',
+      settings: DEFAULT_USER_SETTINGS,
+      createdAt: new Date(2025, 0, 1),
+      updatedAt: new Date(),
+      isOnline: true
+    }).pipe(delay(100));
   }
 
   getUsers(): Observable<User[]> {
-    return this.http.get<User[]>(this.apiUrl);
+    // Mock implementation
+    return of(Array.from(this.mockUsers.values())).pipe(delay(100));
   }
 
-  getUserById(id: string): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/${id}`);
+  getUserById(userId: string): Observable<User> {
+    // Mock implementation
+    const user = this.mockUsers.get(userId);
+    return user 
+      ? of(user).pipe(delay(100))
+      : throwError(() => new Error('User not found'));
   }
 
-  updateUser(id: string, data: Partial<User>): Observable<User> {
-    return this.http.patch<User>(`${this.apiUrl}/${id}`, data);
+  updateUser(userId: string, changes: Partial<User>): Observable<User> {
+    // Mock implementation
+    const user = this.mockUsers.get(userId);
+    if (!user) return throwError(() => new Error('User not found'));
+
+    const updatedUser = { ...user, ...changes };
+    this.mockUsers.set(userId, updatedUser);
+    return of(updatedUser).pipe(delay(100));
   }
 
-  updateAvatar(id: string, file: File): Observable<User> {
-    const formData = new FormData();
-    formData.append('avatar', file);
-    return this.http.post<User>(`${this.apiUrl}/${id}/avatar`, formData);
-  }
+  updateSettings(userId: string, settings: UpdateSettingsDto): Observable<UserSettings> {
+    // Mock implementation
+    const user = this.mockUsers.get(userId);
+    if (!user) return throwError(() => new Error('User not found'));
 
-  // For development, return mock data
-  getMockCurrentUser(): Observable<User> {
-    const mockUser: User = {
-      id: 'currentUser',
-      name: 'John Doe',
-      email: 'john@example.com',
-      avatar: undefined,
-      isOnline: true
+    const updatedSettings: UserSettings = {
+      ...user.settings,
+      ...settings,
+      lastUpdated: new Date()
     };
-    this.currentUserSubject.next(mockUser);
-    return this.currentUserSubject.asObservable() as Observable<User>;
+    this.mockUsers.set(userId, { ...user, settings: updatedSettings });
+    return of(updatedSettings).pipe(delay(100));
   }
 
-  updatePresence(status: UserStatus): void {
-    this.websocketService.updatePresence(status);
+  updateProfile(userId: string, changes: Partial<User>): Observable<User> {
+    // Mock implementation
+    return this.updateUser(userId, changes);
   }
 
-  getOnlineUsers(): Observable<UserStatus[]> {
-    return this.onlineUsers.asObservable();
-  }
+  uploadAvatar(userId: string, file: File): Observable<User> {
+    // Mock implementation
+    const user = this.mockUsers.get(userId);
+    if (!user) return throwError(() => new Error('User not found'));
 
-  isUserOnline(userId: string): Observable<boolean> {
-    return this.onlineUsers.pipe(
-      map(statuses => statuses.some(s => s.userId === userId && s.status === 'online'))
-    );
-  }
-
-  // For development purposes
-  simulateUserOnline(userId: string): void {
-    const status: UserStatus = {
-      userId,
-      status: 'online',
-      lastSeen: new Date()
+    const updatedUser = {
+      ...user,
+      avatar: URL.createObjectURL(file)
     };
-    const currentStatuses = this.onlineUsers.value;
-    const updatedStatuses = currentStatuses
-      .filter(s => s.userId !== userId)
-      .concat(status);
-    this.onlineUsers.next(updatedStatuses);
+    this.mockUsers.set(userId, updatedUser);
+    return of(updatedUser).pipe(delay(500));
   }
 
-  simulateUserOffline(userId: string): void {
-    const status: UserStatus = {
-      userId,
-      status: 'offline',
-      lastSeen: new Date()
-    };
-    const currentStatuses = this.onlineUsers.value;
-    const updatedStatuses = currentStatuses
-      .filter(s => s.userId !== userId)
-      .concat(status);
-    this.onlineUsers.next(updatedStatuses);
+  private initializeMockData(): void {
+    const mockUsers: User[] = [
+      {
+        id: 'user1',
+        name: 'User One',
+        email: 'user1@example.com',
+        avatar: '',
+        isOnline: true,
+        settings: {
+          ...DEFAULT_USER_SETTINGS,
+          theme: 'light',
+          lastUpdated: new Date(2025, 0, 1)
+        }
+      },
+      {
+        id: 'user2',
+        name: 'User Two',
+        email: 'user2@example.com',
+        avatar: '',
+        isOnline: false,
+        settings: {
+          ...DEFAULT_USER_SETTINGS,
+          theme: 'dark',
+          soundEnabled: false,
+          lastUpdated: new Date(2025, 0, 1)
+        }
+      }
+    ];
+
+    mockUsers.forEach(user => this.mockUsers.set(user.id, user));
   }
+}
+
+function throwError(arg0: () => Error): Observable<any> {
+  return new Observable(subscriber => {
+    subscriber.error(arg0());
+  });
 }

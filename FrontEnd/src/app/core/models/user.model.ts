@@ -1,86 +1,74 @@
-export interface User {
+export interface BaseUser {
   id: string;
   name: string;
   email: string;
-  avatar?: string;
-  isOnline?: boolean;
+  avatar: string;
+  settings: UserSettings;
+  isOnline: boolean;
 }
 
-export type UserPresenceStatus = 'online' | 'offline' | 'away' | 'busy';
+export interface User extends BaseUser {
+  // Additional fields specific to general users
+}
 
-export interface UserStatus {
-  userId: string;
-  status: UserPresenceStatus;
-  lastSeen: Date;
+export interface UserProfile extends BaseUser {
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface UserSettings {
-  id: string;
-  userId: string;
   theme: 'light' | 'dark';
-  emailNotifications: boolean;
-  pushNotifications: boolean;
+  enableNotifications: boolean;
   soundEnabled: boolean;
+  showReadReceipts: boolean;
+  showOnlineStatus: boolean;
+  lastUpdated?: Date;
 }
 
-export interface UserProfile extends User {
-  settings: UserSettings;
-  lastSeen?: Date;
-  status?: UserPresenceStatus;
+export interface UpdateSettingsDto {
+  theme?: 'light' | 'dark';
+  enableNotifications?: boolean;
+  soundEnabled?: boolean;
+  showReadReceipts?: boolean;
+  showOnlineStatus?: boolean;
 }
 
-export interface UserTypingStatus {
+export interface UserStatus {
   userId: string;
-  chatId: string;
-  isTyping: boolean;
-  timestamp: Date;
+  status: 'online' | 'away' | 'offline';
+  lastSeen?: Date;
 }
 
-// Helper function to create a new UserStatus object
-export function createUserStatus(
-  userId: string,
-  status: UserPresenceStatus = 'online',
-  lastSeen: Date = new Date()
-): UserStatus {
-  return {
-    userId,
-    status,
-    lastSeen
-  };
+export interface UserPresence {
+  userId: string;
+  status: 'online' | 'away' | 'offline';
+  lastActivity: Date;
 }
 
-// Helper function to create default user settings
-export function createDefaultUserSettings(userId: string): UserSettings {
-  return {
-    id: Math.random().toString(36).substr(2, 9),
-    userId,
-    theme: 'light',
-    emailNotifications: true,
-    pushNotifications: true,
-    soundEnabled: true
-  };
+export interface UpdateProfileDto extends Partial<BaseUser> {
+  currentPassword?: string;
+  newPassword?: string;
 }
 
-// Helper function to format last seen time
-export function formatLastSeen(date: Date): string {
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
+export const DEFAULT_USER_SETTINGS: UserSettings = {
+  theme: 'light',
+  enableNotifications: true,
+  soundEnabled: true,
+  showReadReceipts: true,
+  showOnlineStatus: true
+};
 
-  if (days > 0) {
-    return `${days} day${days > 1 ? 's' : ''} ago`;
-  }
-  if (hours > 0) {
-    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  }
-  if (minutes > 0) {
-    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  }
-  if (seconds > 30) {
-    return `${seconds} seconds ago`;
-  }
-  return 'just now';
+export interface ChatParticipant extends Pick<BaseUser, 'id' | 'name' | 'avatar'> {
+  role?: 'owner' | 'admin' | 'member';
+  lastSeen?: Date;
+  isOnline: boolean;
 }
+
+export const createMockUser = (id: string): User => ({
+  id,
+  name: `User ${id}`,
+  email: `user${id}@example.com`,
+  avatar: '',
+  isOnline: false,
+  settings: DEFAULT_USER_SETTINGS
+});

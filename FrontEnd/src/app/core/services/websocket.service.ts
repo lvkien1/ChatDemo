@@ -1,133 +1,121 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject, BehaviorSubject } from 'rxjs';
-import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
-import { environment } from '../../../environments/environment';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { Message } from '../models/message.model';
-import { UserStatus } from '../models/user.model';
+import { UserStatus, UserPresence } from '../models/user.model';
 
-export interface WebSocketMessage {
-  type: 'message' | 'typing' | 'presence';
+type WebSocketEvent = {
+  type: string;
   payload: any;
-}
+};
 
 @Injectable({
   providedIn: 'root'
 })
-export class WebsocketService {
-  private socket$?: WebSocketSubject<WebSocketMessage>;
-  private messageSubject = new Subject<Message>();
-  private typingSubject = new Subject<{ userId: string; chatId: string }>();
-  private presenceSubject = new BehaviorSubject<UserStatus[]>([]);
-  private reconnectionAttempts = 0;
-  private maxReconnectionAttempts = 5;
+export class WebSocketService {
+  private socket: WebSocket | null = null;
+  private isConnected$ = new BehaviorSubject<boolean>(false);
+  private messages$ = new Subject<Message>();
+  private presenceUpdates$ = new Subject<UserPresence>();
+  private typingUpdates$ = new Subject<{ chatId: string; userId: string; isTyping: boolean }>();
+  private readReceipts$ = new Subject<{ chatId: string; userId: string; lastRead: Date }>();
 
-  constructor() {}
-
-  connect(): void {
-    if (!this.socket$ || this.socket$.closed) {
-      this.socket$ = webSocket<WebSocketMessage>({
-        url: `${environment.apiUrl.replace('http', 'ws')}/ws`,
-        openObserver: {
-          next: () => {
-            console.log('WebSocket connection established');
-            this.reconnectionAttempts = 0;
-          }
-        },
-        closeObserver: {
-          next: () => {
-            console.log('WebSocket connection closed');
-            this.attemptReconnection();
-          }
-        }
-      });
-
-      this.socket$.subscribe({
-        next: (message) => this.handleMessage(message),
-        error: (error) => {
-          console.error('WebSocket error:', error);
-          this.attemptReconnection();
-        }
-      });
-    }
-  }
-
-  private attemptReconnection(): void {
-    if (this.reconnectionAttempts < this.maxReconnectionAttempts) {
-      this.reconnectionAttempts++;
-      console.log(`Attempting to reconnect... (${this.reconnectionAttempts}/${this.maxReconnectionAttempts})`);
-      setTimeout(() => this.connect(), 1000 * Math.pow(2, this.reconnectionAttempts));
-    } else {
-      console.error('Max reconnection attempts reached');
-    }
-  }
-
-  private handleMessage(message: WebSocketMessage): void {
-    switch (message.type) {
-      case 'message':
-        this.messageSubject.next(message.payload);
-        break;
-      case 'typing':
-        this.typingSubject.next(message.payload);
-        break;
-      case 'presence':
-        this.presenceSubject.next(message.payload);
-        break;
-      default:
-        console.warn('Unknown message type:', message);
-    }
-  }
-
-  sendMessage(message: Message): void {
-    this.socket$?.next({
-      type: 'message',
-      payload: message
-    });
-  }
-
-  sendTyping(chatId: string, isTyping: boolean): void {
-    this.socket$?.next({
-      type: 'typing',
-      payload: { chatId, isTyping }
-    });
-  }
-
-  updatePresence(status: UserStatus): void {
-    this.socket$?.next({
-      type: 'presence',
-      payload: status
-    });
-  }
-
-  onMessage(): Observable<Message> {
-    return this.messageSubject.asObservable();
-  }
-
-  onTyping(): Observable<{ userId: string; chatId: string }> {
-    return this.typingSubject.asObservable();
-  }
-
-  onPresenceChange(): Observable<UserStatus[]> {
-    return this.presenceSubject.asObservable();
+  connect(userId: string): void {
+    // Mock implementation
+    this.isConnected$.next(true);
+    console.log('WebSocket connected for user:', userId);
   }
 
   disconnect(): void {
-    this.socket$?.complete();
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+    this.isConnected$.next(false);
   }
 
-  // For development purposes, simulate receiving messages
-  simulateIncomingMessage(message: Message): void {
-    this.messageSubject.next(message);
+  sendMessage(message: Message): void {
+    // Mock implementation
+    console.log('Sending message:', message);
+    this.messages$.next(message);
   }
 
-  simulateTyping(userId: string, chatId: string): void {
-    this.typingSubject.next({ userId, chatId });
+  updateStatus(status: 'online' | 'away' | 'offline'): Observable<UserStatus> {
+    // Mock implementation
+    const response: UserStatus = {
+      userId: 'current-user',
+      status,
+      lastSeen: new Date()
+    };
+    return new Observable(subscriber => {
+      setTimeout(() => {
+        subscriber.next(response);
+        subscriber.complete();
+      }, 100);
+    });
   }
 
-  simulatePresenceChange(status: UserStatus): void {
-    const currentStatuses = this.presenceSubject.value;
-    const updatedStatuses = currentStatuses
-      .filter(s => s.userId !== status.userId)
-      .concat(status);
-    this.presenceSubject.next(updatedStatuses);
+  updateTypingStatus(chatId: string, isTyping: boolean): void {
+    // Mock implementation
+    this.typingUpdates$.next({
+      chatId,
+      userId: 'current-user',
+      isTyping
+    });
+  }
+
+  markMessagesRead(chatId: string, messageIds: string[]): void {
+    // Mock implementation
+    this.readReceipts$.next({
+      chatId,
+      userId: 'current-user',
+      lastRead: new Date()
+    });
+  }
+
+  // Getters for observables
+  getMessages(): Observable<Message> {
+    return this.messages$.asObservable();
+  }
+
+  getPresenceUpdates(): Observable<UserPresence> {
+    return this.presenceUpdates$.asObservable();
+  }
+
+  getTypingUpdates(): Observable<{ chatId: string; userId: string; isTyping: boolean }> {
+    return this.typingUpdates$.asObservable();
+  }
+
+  getReadReceipts(): Observable<{ chatId: string; userId: string; lastRead: Date }> {
+    return this.readReceipts$.asObservable();
+  }
+
+  getConnectionStatus(): Observable<boolean> {
+    return this.isConnected$.asObservable();
+  }
+
+  private handleMessage(event: MessageEvent): void {
+    try {
+      const data: WebSocketEvent = JSON.parse(event.data);
+      
+      switch (data.type) {
+        case 'MESSAGE':
+          this.messages$.next(data.payload);
+          break;
+        case 'PRESENCE':
+          this.presenceUpdates$.next(data.payload);
+          break;
+        case 'TYPING':
+          this.typingUpdates$.next(data.payload);
+          break;
+        case 'READ_RECEIPT':
+          this.readReceipts$.next(data.payload);
+          break;
+        default:
+          console.warn('Unknown message type:', data.type);
+      }
+    } catch (error) {
+      console.error('Error handling WebSocket message:', error);
+    }
   }
 }
