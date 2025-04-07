@@ -1,28 +1,20 @@
 import { createReducer, on } from '@ngrx/store';
 import { Chat } from '../../core/models/chat.model';
-import { Message } from '../../core/models/message.model';
+import { Message, MessageStatus } from '../../core/models/message.model';
 import { ChatActions } from './chat.actions';
-
-interface TypingStatus {
-  chatId: string;
-  isTyping: boolean;
-  timestamp: number;
-}
 
 export interface ChatState {
   chats: Chat[];
   messages: Message[];
-  selectedChatId: string | null;
-  typingUsers: { [userId: string]: TypingStatus };
+  currentChatId: string | null;
   loading: boolean;
   error: string | null;
 }
 
-const initialState: ChatState = {
+export const initialState: ChatState = {
   chats: [],
   messages: [],
-  selectedChatId: null,
-  typingUsers: {},
+  currentChatId: null,
   loading: false,
   error: null
 };
@@ -31,7 +23,7 @@ export const chatReducer = createReducer(
   initialState,
 
   // Load Chats
-  on(ChatActions.loadChats, state => ({
+  on(ChatActions.loadChats, (state) => ({
     ...state,
     loading: true,
     error: null
@@ -40,8 +32,7 @@ export const chatReducer = createReducer(
   on(ChatActions.loadChatsSuccess, (state, { chats }) => ({
     ...state,
     chats,
-    loading: false,
-    error: null
+    loading: false
   })),
 
   on(ChatActions.loadChatsFailure, (state, { error }) => ({
@@ -50,14 +41,8 @@ export const chatReducer = createReducer(
     error
   })),
 
-  // Select Chat
-  on(ChatActions.selectChat, (state, { chatId }) => ({
-    ...state,
-    selectedChatId: chatId
-  })),
-
   // Load Messages
-  on(ChatActions.loadMessages, state => ({
+  on(ChatActions.loadMessages, (state) => ({
     ...state,
     loading: true,
     error: null
@@ -65,12 +50,8 @@ export const chatReducer = createReducer(
 
   on(ChatActions.loadMessagesSuccess, (state, { messages }) => ({
     ...state,
-    messages: [
-      ...state.messages.filter(msg => msg.chatId !== state.selectedChatId),
-      ...messages
-    ],
-    loading: false,
-    error: null
+    messages,
+    loading: false
   })),
 
   on(ChatActions.loadMessagesFailure, (state, { error }) => ({
@@ -80,7 +61,7 @@ export const chatReducer = createReducer(
   })),
 
   // Send Message
-  on(ChatActions.sendMessage, state => ({
+  on(ChatActions.sendMessage, (state) => ({
     ...state,
     loading: true,
     error: null
@@ -89,8 +70,12 @@ export const chatReducer = createReducer(
   on(ChatActions.sendMessageSuccess, (state, { message }) => ({
     ...state,
     messages: [...state.messages, message],
-    loading: false,
-    error: null
+    chats: state.chats.map(chat => 
+      chat.id === message.chatId 
+        ? { ...chat, lastMessage: message, updatedAt: message.timestamp }
+        : chat
+    ),
+    loading: false
   })),
 
   on(ChatActions.sendMessageFailure, (state, { error }) => ({
@@ -99,14 +84,8 @@ export const chatReducer = createReducer(
     error
   })),
 
-  // Message Received
-  on(ChatActions.messageReceived, (state, { message }) => ({
-    ...state,
-    messages: [...state.messages, message]
-  })),
-
   // Upload File
-  on(ChatActions.uploadFile, state => ({
+  on(ChatActions.uploadFile, (state) => ({
     ...state,
     loading: true,
     error: null
@@ -115,8 +94,12 @@ export const chatReducer = createReducer(
   on(ChatActions.uploadFileSuccess, (state, { message }) => ({
     ...state,
     messages: [...state.messages, message],
-    loading: false,
-    error: null
+    chats: state.chats.map(chat => 
+      chat.id === message.chatId 
+        ? { ...chat, lastMessage: message, updatedAt: message.timestamp }
+        : chat
+    ),
+    loading: false
   })),
 
   on(ChatActions.uploadFileFailure, (state, { error }) => ({
@@ -125,42 +108,124 @@ export const chatReducer = createReducer(
     error
   })),
 
-  // Typing Status
-  on(ChatActions.setTypingStatus, (state, { chatId, isTyping }) => ({
+  // Chat Selection
+  on(ChatActions.setCurrentChat, (state, { chatId }) => ({
     ...state,
-    typingUsers: {
-      ...state.typingUsers,
-      'currentUser': { chatId, isTyping, timestamp: Date.now() }
-    }
+    currentChatId: chatId
   })),
 
-  on(ChatActions.userTyping, (state, { userId, chatId }) => ({
+  on(ChatActions.clearCurrentChat, (state) => ({
     ...state,
-    typingUsers: {
-      ...state.typingUsers,
-      [userId]: { chatId, isTyping: true, timestamp: Date.now() }
-    }
+    currentChatId: null
   })),
 
-  // Mark as Read
-  on(ChatActions.markChatAsRead, state => ({
+  // Message Status
+  on(ChatActions.markMessagesRead, (state) => ({
     ...state,
     loading: true,
     error: null
   })),
 
-  on(ChatActions.markChatAsReadSuccess, (state, { chatId }) => ({
+  on(ChatActions.markMessagesReadSuccess, (state, { chatId, messageIds }) => ({
     ...state,
-    chats: state.chats.map(chat =>
-      chat.id === chatId ? { ...chat, unreadCount: 0 } : chat
+    messages: state.messages.map(m => 
+      messageIds.includes(m.id) && m.chatId === chatId
+        ? { ...m, status: 'read' as MessageStatus }
+        : m
     ),
-    loading: false,
-    error: null
+    loading: false
   })),
 
-  on(ChatActions.markChatAsReadFailure, (state, { error }) => ({
+  on(ChatActions.markMessagesReadFailure, (state, { error }) => ({
     ...state,
     loading: false,
     error
+  })),
+
+  // Chat Management
+  on(ChatActions.createChat, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(ChatActions.createChatSuccess, (state, { chat }) => ({
+    ...state,
+    chats: [...state.chats, chat],
+    currentChatId: chat.id,
+    loading: false
+  })),
+
+  on(ChatActions.createChatFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  on(ChatActions.updateChat, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(ChatActions.updateChatSuccess, (state, { chat }) => ({
+    ...state,
+    chats: state.chats.map(c => c.id === chat.id ? chat : c),
+    loading: false
+  })),
+
+  on(ChatActions.updateChatFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  on(ChatActions.deleteChat, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(ChatActions.deleteChatSuccess, (state, { chatId }) => ({
+    ...state,
+    chats: state.chats.filter(chat => chat.id !== chatId),
+    currentChatId: state.currentChatId === chatId ? null : state.currentChatId,
+    loading: false
+  })),
+
+  on(ChatActions.deleteChatFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  // WebSocket Events
+  on(ChatActions.messageReceived, (state, { message }) => ({
+    ...state,
+    messages: [...state.messages, message],
+    chats: state.chats.map(chat => 
+      chat.id === message.chatId 
+        ? { 
+            ...chat, 
+            lastMessage: message,
+            updatedAt: message.timestamp,
+            unreadCount: chat.id !== state.currentChatId ? (chat.unreadCount || 0) + 1 : 0
+          }
+        : chat
+    )
+  })),
+
+  on(ChatActions.typingStatusUpdated, (state, { chatId, userId, isTyping }) => ({
+    ...state,
+    chats: state.chats.map(chat => 
+      chat.id === chatId
+        ? {
+            ...chat,
+            typingUsers: isTyping
+              ? [...new Set([...chat.typingUsers, userId])]
+              : chat.typingUsers.filter(id => id !== userId)
+          }
+        : chat
+    )
   }))
 );

@@ -1,30 +1,28 @@
 import { createReducer, on } from '@ngrx/store';
-import { User, UserStatus, UserSettings, createDefaultUserSettings } from '../../core/models/user.model';
+import { User, UserProfile, UserSettings } from '../../core/models/user.model';
 import { UserActions } from './user.actions';
 
 export interface UserState {
-  currentUser: User | null;
-  settings: UserSettings | null;
-  onlineUsers: UserStatus[];
-  theme: 'light' | 'dark';
+  currentUser: UserProfile | null;
+  users: User[];
   loading: boolean;
   error: string | null;
+  settings: UserSettings | null;
 }
 
-const initialState: UserState = {
+export const initialState: UserState = {
   currentUser: null,
-  settings: null,
-  onlineUsers: [],
-  theme: 'light',
+  users: [],
   loading: false,
-  error: null
+  error: null,
+  settings: null
 };
 
 export const userReducer = createReducer(
   initialState,
 
   // Load Current User
-  on(UserActions.loadCurrentUser, state => ({
+  on(UserActions.loadCurrentUser, (state) => ({
     ...state,
     loading: true,
     error: null
@@ -33,9 +31,8 @@ export const userReducer = createReducer(
   on(UserActions.loadCurrentUserSuccess, (state, { user }) => ({
     ...state,
     currentUser: user,
-    settings: state.settings || createDefaultUserSettings(user.id),
     loading: false,
-    error: null
+    settings: user.settings
   })),
 
   on(UserActions.loadCurrentUserFailure, (state, { error }) => ({
@@ -44,8 +41,48 @@ export const userReducer = createReducer(
     error
   })),
 
+  // Load All Users
+  on(UserActions.loadUsers, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(UserActions.loadUsersSuccess, (state, { users }) => ({
+    ...state,
+    users,
+    loading: false
+  })),
+
+  on(UserActions.loadUsersFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
+  // Load User by ID
+  on(UserActions.loadUserById, (state) => ({
+    ...state,
+    loading: true,
+    error: null
+  })),
+
+  on(UserActions.loadUserByIdSuccess, (state, { user }) => ({
+    ...state,
+    users: state.users.some(u => u.id === user.id)
+      ? state.users.map(u => u.id === user.id ? user : u)
+      : [...state.users, user],
+    loading: false
+  })),
+
+  on(UserActions.loadUserByIdFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+
   // Update User
-  on(UserActions.updateUser, state => ({
+  on(UserActions.updateUser, (state) => ({
     ...state,
     loading: true,
     error: null
@@ -53,9 +90,11 @@ export const userReducer = createReducer(
 
   on(UserActions.updateUserSuccess, (state, { user }) => ({
     ...state,
-    currentUser: user,
-    loading: false,
-    error: null
+    users: state.users.map(u => u.id === user.id ? user : u),
+    currentUser: state.currentUser?.id === user.id
+      ? { ...state.currentUser, ...user }
+      : state.currentUser,
+    loading: false
   })),
 
   on(UserActions.updateUserFailure, (state, { error }) => ({
@@ -64,28 +103,8 @@ export const userReducer = createReducer(
     error
   })),
 
-  // Update Avatar
-  on(UserActions.updateAvatar, state => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-
-  on(UserActions.updateAvatarSuccess, (state, { user }) => ({
-    ...state,
-    currentUser: user,
-    loading: false,
-    error: null
-  })),
-
-  on(UserActions.updateAvatarFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-
   // Update Settings
-  on(UserActions.updateSettings, state => ({
+  on(UserActions.updateSettings, (state) => ({
     ...state,
     loading: true,
     error: null
@@ -94,8 +113,10 @@ export const userReducer = createReducer(
   on(UserActions.updateSettingsSuccess, (state, { settings }) => ({
     ...state,
     settings,
-    loading: false,
-    error: null
+    currentUser: state.currentUser
+      ? { ...state.currentUser, settings }
+      : null,
+    loading: false
   })),
 
   on(UserActions.updateSettingsFailure, (state, { error }) => ({
@@ -104,47 +125,32 @@ export const userReducer = createReducer(
     error
   })),
 
-  // Update Presence
-  on(UserActions.updatePresence, state => ({
-    ...state,
-    loading: true,
-    error: null
-  })),
-
-  on(UserActions.updatePresenceSuccess, (state, { status }) => ({
-    ...state,
-    onlineUsers: [
-      ...state.onlineUsers.filter(u => u.userId !== status.userId),
-      status
-    ],
-    loading: false,
-    error: null
-  })),
-
-  on(UserActions.updatePresenceFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error
-  })),
-
-  // Presence Changed
-  on(UserActions.presenceChanged, (state, { statuses }) => ({
-    ...state,
-    onlineUsers: statuses
-  })),
-
-  // Set Theme
+  // Theme
   on(UserActions.setTheme, (state, { theme }) => ({
     ...state,
-    theme
+    settings: state.settings
+      ? { ...state.settings, theme }
+      : null
   })),
 
-  // Set Online Status
-  on(UserActions.setOnlineStatus, (state, { isOnline }) => ({
+  // User Status
+  on(UserActions.updateUserStatus, (state, { userId, isOnline }) => ({
     ...state,
-    currentUser: state.currentUser ? {
-      ...state.currentUser,
-      isOnline
-    } : null
+    users: state.users.map(user =>
+      user.id === userId ? { ...user, isOnline } : user
+    )
+  })),
+
+  // Connection Status
+  on(UserActions.setConnectionStatus, (state, { isConnected }) => ({
+    ...state,
+    currentUser: state.currentUser
+      ? { ...state.currentUser, isOnline: isConnected }
+      : null,
+    users: state.users.map(user =>
+      user.id === state.currentUser?.id
+        ? { ...user, isOnline: isConnected }
+        : user
+    )
   }))
 );

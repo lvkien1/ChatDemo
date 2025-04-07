@@ -1,147 +1,139 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { Chat } from '../models/chat.model';
-import { Message } from '../models/message.model';
+import { delay } from 'rxjs/operators';
+import { Chat, createMockChat } from '../models/chat.model';
+import { Message, createTextMessage } from '../models/message.model';
 import { environment } from '../../../environments/environment';
+import { ChatParticipant } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
   private apiUrl = `${environment.apiUrl}/chats`;
+  private mockChats: Map<string, Chat> = new Map();
+  private mockMessages: Map<string, Message[]> = new Map();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.initializeMockData();
+  }
 
   getChats(): Observable<Chat[]> {
-    // For development, use mock data
-    return this.getMockChats();
-    // return this.http.get<Chat[]>(this.apiUrl);
+    // Mock implementation
+    return of(Array.from(this.mockChats.values())).pipe(delay(100));
   }
 
   getMessages(chatId: string): Observable<Message[]> {
-    // For development, use mock data
-    return this.getMockMessages(chatId);
-    // return this.http.get<Message[]>(`${this.apiUrl}/${chatId}/messages`);
+    // Mock implementation
+    return of(this.mockMessages.get(chatId) || []).pipe(delay(100));
   }
 
-  sendMessage(chatId: string, message: Partial<Message>): Observable<Message> {
-    // For development, return a mock response
-    const mockResponse: Message = {
-      ...message as Message,
-      id: Math.random().toString(36).substr(2, 9),
-      chatId,
-      timestamp: new Date(),
-      status: 'sent'
-    };
-    return of(mockResponse);
-    // return this.http.post<Message>(`${this.apiUrl}/${chatId}/messages`, message);
+  sendMessage(chatId: string, content: string, attachments: string[] = []): Observable<Message> {
+    // Mock implementation
+    const message = createTextMessage(chatId, content, 'current-user');
+
+    let messages = this.mockMessages.get(chatId) || [];
+    messages = [...messages, message];
+    // messages.push(message);
+    this.mockMessages.set(chatId, messages);
+
+    // Update last message in chat
+    const chat = this.mockChats.get(chatId);
+    if (chat) {
+      chat.lastMessage = message;
+      chat.updatedAt = new Date();
+      this.mockChats.set(chatId, chat);
+    }
+
+    return of(message).pipe(delay(100));
   }
 
   uploadFile(chatId: string, file: File): Observable<Message> {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    // For development, return a mock file message
-    const mockFileMessage: Message = {
-      id: Math.random().toString(36).substr(2, 9),
+    // Mock implementation
+    const message: Message = {
+      id: Date.now().toString(),
       chatId,
-      senderId: 'currentUser',
-      type: 'file',
       content: '',
+      senderId: 'current-user',
       timestamp: new Date(),
+      type: 'file',
       status: 'sent',
-      attachments: [{
-        id: Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        url: URL.createObjectURL(file)
-      }]
+      attachments: [
+        {
+          id: Date.now().toString(),
+          url: URL.createObjectURL(file),
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          mimeType: file.type,
+        },
+      ],
     };
-    return of(mockFileMessage);
-    // return this.http.post<Message>(`${this.apiUrl}/${chatId}/attachments`, formData);
+
+    let messages = this.mockMessages.get(chatId) || [];
+    messages = [...messages, message];
+    // messages.push(message);
+    this.mockMessages.set(chatId, messages);
+
+    // Update last message in chat
+    const chat = this.mockChats.get(chatId);
+    if (chat) {
+      var newChat = {
+        ...chat,
+        lastMessage: message,
+        updatedAt: new Date()
+      };
+      this.mockChats.set(chatId, newChat);
+    }
+
+    return of(message).pipe(delay(500));
   }
 
-  markAsRead(chatId: string): Observable<void> {
-    // For development, return empty response
-    return of(void 0);
-    // return this.http.post<void>(`${this.apiUrl}/${chatId}/read`, {});
+  updateTypingStatus(chatId: string, userId: string, isTyping: boolean): Observable<void> {
+    // Mock implementation
+    const chat = this.mockChats.get(chatId);
+    if (chat) {
+      const updatedChat = {
+        ...chat,
+        typingUsers: isTyping 
+          ? [...new Set([...chat.typingUsers, userId])]
+          : chat.typingUsers.filter(id => id !== userId)
+      };
+      this.mockChats.set(chatId, updatedChat);
+    }
+    return of(undefined).pipe(delay(100));
   }
 
-  // Mock data methods
-  private getMockChats(): Observable<Chat[]> {
-    const now = new Date();
-    const mockChats: Chat[] = [
-      {
-        id: '1',
-        participants: ['John Doe', 'Jane Smith'],
-        lastMessage: {
-          id: '1',
-          chatId: '1',
-          content: 'Hello there!',
-          senderId: 'Jane Smith',
-          type: 'text',
-          timestamp: new Date(Date.now() - 3600000),
-          status: 'read'
-        },
-        unreadCount: 2,
-        createdAt: new Date(now.getTime() - 86400000), // 1 day ago
-        updatedAt: new Date(now.getTime() - 3600000) // 1 hour ago
-      },
-      {
-        id: '2',
-        participants: ['John Doe', 'Alice Johnson'],
-        lastMessage: {
-          id: '2',
-          chatId: '2',
-          content: 'Did you see the latest update?',
-          senderId: 'Alice Johnson',
-          type: 'text',
-          timestamp: new Date(Date.now() - 1800000),
-          status: 'delivered'
-        },
-        unreadCount: 0,
-        createdAt: new Date(now.getTime() - 172800000), // 2 days ago
-        updatedAt: new Date(now.getTime() - 1800000) // 30 minutes ago
-      }
-    ];
-
-    return of(mockChats);
+  markAsRead(chatId: string, messageIds: string[]): Observable<void> {
+    // Mock implementation
+    const chat = this.mockChats.get(chatId);
+    if (chat) {
+      chat.unreadCount = 0;
+      this.mockChats.set(chatId, chat);
+    }
+    return of(undefined).pipe(delay(100));
   }
 
-  private getMockMessages(chatId: string): Observable<Message[]> {
-    const mockMessages: Message[] = [
-      {
-        id: '1',
-        chatId,
-        content: 'Hello there!',
-        senderId: 'Jane Smith',
-        type: 'text',
-        timestamp: new Date(Date.now() - 3600000),
-        status: 'read'
-      },
-      {
-        id: '2',
-        chatId,
-        content: 'Hi! How are you?',
-        senderId: 'currentUser',
-        type: 'text',
-        timestamp: new Date(Date.now() - 3500000),
-        status: 'read'
-      },
-      {
-        id: '3',
-        chatId,
-        content: 'I\'m doing great, thanks!',
-        senderId: 'Jane Smith',
-        type: 'text',
-        timestamp: new Date(Date.now() - 3400000),
-        status: 'delivered'
-      }
-    ];
+  private initializeMockData(): void {
+    // Add mock chat
+    const mockChat = createMockChat('1');
+    const mockParticipant: ChatParticipant = {
+      id: 'user1',
+      name: 'User One',
+      avatar: '',
+      isOnline: true,
+      role: 'member'
+    };
+    
+    mockChat.participantsInfo = [mockParticipant];
+    mockChat.lastMessage = createTextMessage('1', 'Hello', 'user1');
+    this.mockChats.set('1', mockChat);
 
-    return of(mockMessages);
+    // Add mock messages
+    this.mockMessages.set('1', [
+      createTextMessage('1', 'Hello', 'user1'),
+      createTextMessage('1', 'Hi there!', 'current-user')
+    ]);
   }
 }

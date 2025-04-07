@@ -1,16 +1,16 @@
 import { Routes } from '@angular/router';
+import { ChatDetailComponent } from './pages/chat-detail.component';
+import { ChatComponent } from './pages/chat.component';
 
-export const CHAT_ROUTES: Routes = [
+export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => 
-      import('./pages/chat.component')
-        .then(m => m.ChatComponent)
-  },
-  {
-    path: ':id',
-    loadComponent: () => 
-      import('./pages/chat-detail.component')
-        .then(m => m.ChatDetailComponent)
+    component: ChatComponent,
+    children: [
+      {
+        path: ':id',
+        component: ChatDetailComponent
+      }
+    ]
   }
 ];

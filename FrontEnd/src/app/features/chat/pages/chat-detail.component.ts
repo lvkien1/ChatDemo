@@ -1,228 +1,188 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule, AsyncPipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, Subject } from 'rxjs';
-import { takeUntil, filter } from 'rxjs/operators';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Observable, Subject, combineLatest } from 'rxjs';
+import { takeUntil, filter, map } from 'rxjs/operators';
 
-import { Chat } from '../../../core/models/chat.model';
-import { Message } from '../../../core/models/message.model';
-import { ChatActions } from '../../../store/chat';
-import { selectSelectedChat, selectCurrentChatMessages, selectTypingUsersForCurrentChat } from '../../../store/chat';
+import { Chat, getChatName, getChatAvatar, getTypingUsersText } from '../../../core/models/chat.model';
+import { Message, MessageAttachment } from '../../../core/models/message.model';
+import { ChatActions } from '../../../store/chat/chat.actions';
 import { MessageBubbleComponent } from '../../../shared/components/message-bubble/message-bubble.component';
 import { MessageInputComponent } from '../../../shared/components/message-input/message-input.component';
-import { UserAvatarComponent } from '../../../shared/components/user-avatar/user-avatar.component';
-import { ImagePreviewDialogComponent } from '../../../shared/components/image-preview-dialog/image-preview-dialog.component';
+import * as ChatSelectors from '../../../store/chat/chat.selectors';
+import * as UserSelectors from '../../../store/user/user.selectors';
 
 @Component({
   selector: 'app-chat-detail',
   standalone: true,
   imports: [
     CommonModule,
-    MatIconModule,
-    MatButtonModule,
-    MatDialogModule,
+    AsyncPipe,
     MessageBubbleComponent,
-    MessageInputComponent,
-    UserAvatarComponent
+    MessageInputComponent
   ],
   template: `
-    <div class="chat-detail-container">
-      <!-- Chat Header -->
-      <header class="chat-header" *ngIf="selectedChat$ | async as chat">
-        <div class="header-info">
-          <app-user-avatar
-            [name]="chat.participants.join(', ')"
-            size="medium"
-          ></app-user-avatar>
-          <div class="participant-info">
-            <h2>{{ chat.participants.join(', ') }}</h2>
-            <span class="status" *ngIf="typingUsers$ | async as typingUsers">
-              <ng-container *ngIf="typingUsers.length > 0; else online">
-                {{ typingUsers.join(', ') }} {{ typingUsers.length === 1 ? 'is' : 'are' }} typing...
-              </ng-container>
-              <ng-template #online>Online</ng-template>
-            </span>
-          </div>
-        </div>
-        <div class="header-actions">
-          <button mat-icon-button color="primary">
-            <mat-icon>call</mat-icon>
-          </button>
-          <button mat-icon-button color="primary">
-            <mat-icon>videocam</mat-icon>
-          </button>
-          <button mat-icon-button>
-            <mat-icon>more_vert</mat-icon>
-          </button>
+    <div class="chat-detail" *ngIf="chat$ | async as chat">
+      <header class="chat-header">
+        <img [src]="chatAvatar$ | async" [alt]="chatName$ | async" class="chat-avatar">
+        <div class="chat-info">
+          <h2>{{ chatName$ | async }}</h2>
+          <p class="typing-status">{{ typingStatus$ | async }}</p>
         </div>
       </header>
-
-      <!-- Messages List -->
-      <div class="messages-container" #messagesContainer>
-        <div class="messages-list">
+      
+      <main class="message-list" #messageList>
+        <div *ngFor="let message of messages$ | async">
           <app-message-bubble
-            *ngFor="let message of messages$ | async"
             [message]="message"
-            [isSent]="message.senderId === currentUserId"
-            [senderName]="message.senderId"
+            [isOwnMessage]="message.senderId === (currentUserId$ | async)"
+            (fileClick)="onFileClick($event)"
+            (imageClick)="onImageClick($event)"
           ></app-message-bubble>
         </div>
-      </div>
-
-      <!-- Message Input -->
+      </main>
+      
       <app-message-input
-        (send)="onSendMessage($event)"
-        (typing)="onTypingStatus($event)"
+        (messageSent)="onMessageSent($event)"
+        (fileSelected)="onFileSelected($event)"
+        (typing)="onTyping($event)"
       ></app-message-input>
     </div>
   `,
   styles: [`
-    .chat-detail-container {
-      height: 100vh;
+    .chat-detail {
       display: flex;
       flex-direction: column;
-      background: white;
+      height: 100%;
     }
 
     .chat-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 16px 24px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      padding: 1rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.12);
       background: white;
-      height: 72px;
     }
 
-    .header-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .chat-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 1rem;
     }
 
-    .participant-info {
+    .chat-info {
+      flex: 1;
+
       h2 {
         margin: 0;
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 4px;
+        font-size: 1.1rem;
       }
 
-      .status {
-        font-size: 12px;
+      .typing-status {
+        margin: 0;
+        font-size: 0.9rem;
         color: rgba(0, 0, 0, 0.6);
       }
     }
 
-    .header-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .messages-container {
+    .message-list {
       flex: 1;
       overflow-y: auto;
-      padding: 24px;
-      scroll-behavior: smooth;
-    }
-
-    .messages-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      padding: 1rem;
+      background: #f5f5f5;
     }
   `]
 })
-export class ChatDetailComponent implements OnInit, OnDestroy, AfterViewChecked {
-  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
-
-  selectedChat$: Observable<Chat | null>;
+export class ChatDetailComponent implements OnInit, OnDestroy {
+  chat$: Observable<Chat | null>;
   messages$: Observable<Message[]>;
-  typingUsers$: Observable<string[]>;
-  currentUserId = 'currentUser'; // This should come from auth service
+  currentUserId$: Observable<string>;
+  chatName$: Observable<string>;
+  chatAvatar$: Observable<string>;
+  typingStatus$: Observable<string>;
+  
   private destroy$ = new Subject<void>();
-  private shouldScrollToBottom = false;
 
   constructor(
     private route: ActivatedRoute,
-    private store: Store,
-    private dialog: MatDialog
+    private store: Store
   ) {
-    this.selectedChat$ = this.store.select(selectSelectedChat).pipe(
-      filter((chat): chat is Chat | null => chat !== undefined)
+    this.currentUserId$ = this.store.select(UserSelectors.selectCurrentUser).pipe(
+      map(user => user?.id ?? '')
     );
-    this.messages$ = this.store.select(selectCurrentChatMessages);
-    this.typingUsers$ = this.store.select(selectTypingUsersForCurrentChat);
+    
+    this.chat$ = this.store.select(ChatSelectors.selectCurrentChat).pipe(
+      map(chat => chat || null)
+    );
 
-    // Subscribe to messages to trigger scroll
-    this.messages$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      this.shouldScrollToBottom = true;
-    });
+    this.messages$ = this.store.select(ChatSelectors.selectCurrentChatMessages);
+    
+    this.chatName$ = combineLatest([
+      this.chat$,
+      this.currentUserId$
+    ]).pipe(
+      map(([chat, userId]) => chat ? getChatName(chat, userId) : '')
+    );
+
+    this.chatAvatar$ = combineLatest([
+      this.chat$,
+      this.currentUserId$
+    ]).pipe(
+      map(([chat, userId]) => chat ? getChatAvatar(chat, userId) : '')
+    );
+
+    this.typingStatus$ = combineLatest([
+      this.chat$,
+      this.currentUserId$
+    ]).pipe(
+      map(([chat, userId]) => chat ? getTypingUsersText(chat, userId) : '')
+    );
   }
 
   ngOnInit(): void {
-    this.route.params
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(params => {
-        const chatId = params['id'];
-        if (chatId) {
-          this.store.dispatch(ChatActions.selectChat({ chatId }));
-          this.store.dispatch(ChatActions.loadMessages({ chatId }));
-        }
-      });
-  }
-
-  ngAfterViewChecked(): void {
-    if (this.shouldScrollToBottom) {
-      this.scrollToBottom();
-      this.shouldScrollToBottom = false;
-    }
+    this.route.params.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      const chatId = params['id'];
+      this.store.dispatch(ChatActions.setCurrentChat({ chatId }));
+      this.store.dispatch(ChatActions.loadMessages({ chatId }));
+    });
   }
 
   ngOnDestroy(): void {
+    this.store.dispatch(ChatActions.clearCurrentChat());
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  private scrollToBottom(): void {
-    try {
-      const container = this.messagesContainer.nativeElement;
-      container.scrollTop = container.scrollHeight;
-    } catch (err) {
-      console.error('Error scrolling to bottom:', err);
-    }
+  onMessageSent(content: string): void {
+    const chatId = this.route.snapshot.params['id'];
+    this.store.dispatch(ChatActions.sendMessage({ 
+      chatId, 
+      content, 
+      attachments: []
+    }));
   }
 
-  onSendMessage(event: { content: string; files: File[] }): void {
+  onFileSelected(file: File): void {
     const chatId = this.route.snapshot.params['id'];
-    if (!chatId) return;
-
-    if (event.files.length > 0) {
-      event.files.forEach(file => {
-        this.store.dispatch(ChatActions.uploadFile({ chatId, file }));
-      });
-    }
-
-    if (event.content.trim()) {
-      this.store.dispatch(ChatActions.sendMessage({
-        chatId,
-        message: {
-          content: event.content,
-          senderId: this.currentUserId,
-          type: 'text'
-        }
-      }));
-    }
+    this.store.dispatch(ChatActions.uploadFile({ chatId, file }));
   }
 
-  onTypingStatus(isTyping: boolean): void {
+  onTyping(isTyping: boolean): void {
     const chatId = this.route.snapshot.params['id'];
-    if (chatId) {
-      this.store.dispatch(ChatActions.setTypingStatus({ chatId, isTyping }));
-    }
+    this.store.dispatch(ChatActions.updateTypingStatus({ chatId, isTyping }));
+  }
+
+  onFileClick(attachment: MessageAttachment): void {
+    // Handle file click (e.g., download or preview)
+    window.open(attachment.url, '_blank');
+  }
+
+  onImageClick(attachment: MessageAttachment): void {
+    // Handle image click (e.g., open preview dialog)
+    window.open(attachment.url, '_blank');
   }
 }

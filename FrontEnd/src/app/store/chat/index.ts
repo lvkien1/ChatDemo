@@ -1,11 +1,11 @@
+import { createFeature } from '@ngrx/store';
+import { chatReducer, ChatState } from './chat.reducer';
+
 export * from './chat.actions';
-export * from './chat.reducer';
 export * from './chat.selectors';
-export * from './chat.effects';
+export type { ChatState } from './chat.reducer';
 
-// Root chat state interface
-import { ChatState } from './chat.reducer';
-
-export interface State {
-  chat: ChatState;
-}
+export const chatFeature = createFeature({
+  name: 'chat',
+  reducer: chatReducer
+});

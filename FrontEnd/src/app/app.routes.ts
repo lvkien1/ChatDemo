@@ -3,29 +3,23 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'chat',
+    redirectTo: '/chat',
     pathMatch: 'full'
   },
   {
     path: 'chat',
-    loadChildren: () => 
-      import('./features/chat/chat.routes')
-        .then(m => m.CHAT_ROUTES)
+    loadChildren: () => import('./features/chat/chat.routes').then(m => m.routes)
   },
   {
     path: 'messages',
-    loadChildren: () => 
-      import('./features/messages/messages.routes')
-        .then(m => m.MESSAGES_ROUTES)
+    loadChildren: () => import('./features/messages/messages.routes').then(m => m.routes)
   },
   {
     path: 'files',
-    loadChildren: () => 
-      import('./features/files/files.routes')
-        .then(m => m.FILES_ROUTES)
+    loadChildren: () => import('./features/files/files.routes').then(m => m.routes)
   },
   {
     path: '**',
-    redirectTo: 'chat'
+    redirectTo: '/chat'
   }
 ];

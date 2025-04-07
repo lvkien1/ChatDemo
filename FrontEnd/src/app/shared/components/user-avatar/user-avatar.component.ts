@@ -1,57 +1,47 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatIconModule } from '@angular/material/icon';
+import { User } from '../../../core/models/user.model';
 
 @Component({
   selector: 'app-user-avatar',
   standalone: true,
-  imports: [CommonModule, MatTooltipModule],
+  imports: [CommonModule, MatIconModule],
   template: `
-    <div 
-      class="avatar"
-      [class.online]="isOnline"
-      [class.size-small]="size === 'small'"
-      [class.size-medium]="size === 'medium'"
-      [class.size-large]="size === 'large'"
-      [matTooltip]="name"
-      [style.background-color]="getBackgroundColor(name)"
-    >
-      <ng-container *ngIf="imageUrl; else initials">
-        <img [src]="imageUrl" [alt]="name" class="avatar-image">
+    <div class="avatar-container" 
+         [style.width.px]="size"
+         [style.height.px]="size"
+         [class.online]="user?.isOnline">
+      <ng-container *ngIf="user">
+        <img *ngIf="user.avatar; else initialAvatar"
+             [src]="user.avatar"
+             [alt]="user.name"
+             class="avatar-image">
+        <ng-template #initialAvatar>
+          <div class="initial-avatar" [style.fontSize.px]="size * 0.4">
+            {{ getInitials(user.name) }}
+          </div>
+        </ng-template>
       </ng-container>
-      <ng-template #initials>
-        {{ getInitials(name) }}
-      </ng-template>
+      <div *ngIf="!user" class="default-avatar">
+        <mat-icon [style.fontSize.px]="size * 0.6">account_circle</mat-icon>
+      </div>
+      <div *ngIf="showStatus" class="status-indicator"></div>
     </div>
   `,
   styles: [`
-    .avatar {
+    .avatar-container {
+      position: relative;
+      border-radius: 50%;
+      overflow: hidden;
+      background-color: #E0E0E0;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
-      color: white;
-      font-weight: 500;
-      position: relative;
-      overflow: hidden;
-    }
 
-    .size-small {
-      width: 32px;
-      height: 32px;
-      font-size: 12px;
-    }
-
-    .size-medium {
-      width: 40px;
-      height: 40px;
-      font-size: 14px;
-    }
-
-    .size-large {
-      width: 48px;
-      height: 48px;
-      font-size: 16px;
+      &.online .status-indicator {
+        background-color: #4CAF50;
+      }
     }
 
     .avatar-image {
@@ -60,45 +50,53 @@ import { MatTooltipModule } from '@angular/material/tooltip';
       object-fit: cover;
     }
 
-    .online::after {
-      content: '';
+    .initial-avatar {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #615EF0;
+      color: white;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .default-avatar {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(0, 0, 0, 0.4);
+    }
+
+    .status-indicator {
       position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 8px;
-      height: 8px;
-      background-color: #4CAF50;
+      bottom: 0;
+      right: 0;
+      width: 25%;
+      height: 25%;
+      min-width: 8px;
+      min-height: 8px;
+      max-width: 12px;
+      max-height: 12px;
       border-radius: 50%;
+      background-color: #9E9E9E;
       border: 2px solid white;
     }
   `]
 })
 export class UserAvatarComponent {
-  @Input() name = '';
-  @Input() imageUrl?: string;
-  @Input() isOnline = false;
-  @Input() size: 'small' | 'medium' | 'large' = 'medium';
-
-  private colors = [
-    '#F44336', '#E91E63', '#9C27B0', '#673AB7', 
-    '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4',
-    '#009688', '#4CAF50', '#8BC34A', '#CDDC39',
-    '#FFC107', '#FF9800', '#FF5722'
-  ];
+  @Input() user: User | null = null;
+  @Input() size = 40;
+  @Input() showStatus = true;
 
   getInitials(name: string): string {
     return name
       .split(' ')
-      .map(n => n[0])
+      .map(part => part[0])
       .join('')
-      .toUpperCase()
       .slice(0, 2);
-  }
-
-  getBackgroundColor(name: string): string {
-    const charCode = name
-      .split('')
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return this.colors[charCode % this.colors.length];
   }
 }
