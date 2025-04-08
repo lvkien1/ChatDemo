@@ -12,17 +12,12 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
 @Component({
   selector: 'app-navigation-sidebar',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    MatIconModule,
-    UserAvatarComponent
-  ],
+  imports: [CommonModule, RouterModule, MatIconModule, UserAvatarComponent],
   template: `
     <aside class="nav-sidebar">
       <!-- User Profile -->
       <div class="user-profile">
-        <app-user-avatar 
+        <app-user-avatar
           [user]="currentUser$ | async"
           [size]="40"
           [showStatus]="true"
@@ -32,24 +27,22 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
 
       <!-- Navigation Links -->
       <nav class="nav-links">
-        <a routerLink="/chat" 
-           routerLinkActive="active" 
-           [routerLinkActiveOptions]="{exact: true}"
-           class="nav-item">
+        <a
+          routerLink="/chat"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="nav-item"
+        >
           <mat-icon>chat</mat-icon>
           <span class="nav-label">Chats</span>
         </a>
-        
-        <a routerLink="/messages" 
-           routerLinkActive="active"
-           class="nav-item">
+
+        <a routerLink="/messages" routerLinkActive="active" class="nav-item">
           <mat-icon>message</mat-icon>
           <span class="nav-label">Messages</span>
         </a>
 
-        <a routerLink="/files" 
-           routerLinkActive="active"
-           class="nav-item">
+        <a routerLink="/files" routerLinkActive="active" class="nav-item">
           <mat-icon>folder</mat-icon>
           <span class="nav-label">Files</span>
         </a>
@@ -64,87 +57,97 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
       </div>
     </aside>
   `,
-  styles: [`
-    .nav-sidebar {
-      height: 100%;
-      width: 72px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 16px 0;
-      background: white;
-      border-right: 1px solid rgba(0, 0, 0, 0.08);
-      transition: width 0.3s ease;
-
-      &:hover {
-        width: 200px;
-
-        .nav-label {
-          opacity: 1;
-          visibility: visible;
+  styles: [
+    `
+      :host {
+        ::ng-deep {
+          mat-icon {
+            overflow: inherit;
+          }
         }
       }
-    }
+      .nav-sidebar {
+        height: 100%;
+        width: 72px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 0;
+        background: white;
+        border-right: 1px solid rgba(0, 0, 0, 0.08);
+        transition: width 0.3s ease;
+        position: relative;
+        z-index: 1;
+        &:hover {
+          width: 200px;
 
-    .user-profile {
-      margin-bottom: 24px;
-      cursor: pointer;
-    }
-
-    .nav-links {
-      flex: 1;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 0 12px;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      border-radius: 8px;
-      color: rgba(0, 0, 0, 0.7);
-      text-decoration: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      width: 100%;
-      border: none;
-      background: none;
-      font: inherit;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.04);
+          .nav-label {
+            opacity: 1;
+            visibility: visible;
+          }
+        }
       }
 
-      &.active {
-        color: #615EF0;
-        background: rgba(97, 94, 240, 0.08);
+      .user-profile {
+        margin-bottom: 24px;
+        cursor: pointer;
+      }
+
+      .nav-links {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0 12px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        color: rgba(0, 0, 0, 0.7);
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 100%;
+        border: none;
+        background: none;
+        font: inherit;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.04);
+        }
+
+        &.active {
+          color: #615ef0;
+          background: rgba(97, 94, 240, 0.08);
+
+          mat-icon {
+            color: #615ef0;
+          }
+        }
 
         mat-icon {
-          color: #615EF0;
+          color: rgba(0, 0, 0, 0.7);
         }
       }
 
-      mat-icon {
-        color: rgba(0, 0, 0, 0.7);
+      .nav-label {
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s ease;
+        white-space: nowrap;
       }
-    }
 
-    .nav-label {
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .nav-footer {
-      width: 100%;
-      padding: 0 12px;
-    }
-  `]
+      .nav-footer {
+        width: 100%;
+        padding: 0 12px;
+      }
+    `,
+  ],
 })
 export class NavigationSidebarComponent implements OnInit {
   currentUser$: Observable<User | null>;
