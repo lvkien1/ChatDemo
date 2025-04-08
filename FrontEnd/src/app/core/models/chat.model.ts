@@ -63,12 +63,14 @@ export function getChatName(chat: Chat, currentUserId: string): string {
 
 export function getChatAvatar(chat: Chat, currentUserId: string): string {
   if (chat.type === 'group') {
-    return chat.avatar || '/assets/images/group-avatar.png';
+    return chat.avatar || '';
   }
-  
+
   // For direct chats, show the other participant's avatar
-  const otherParticipant = chat.participantsInfo.find(p => p.id !== currentUserId);
-  return otherParticipant?.avatar || '/assets/images/user-avatar.png';
+  const otherParticipant = chat.participantsInfo.find(
+    (p) => p.id !== currentUserId
+  );
+  return otherParticipant?.avatar || '';
 }
 
 export function getTypingUsersText(chat: Chat, currentUserId: string): string {
