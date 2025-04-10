@@ -12,6 +12,7 @@ import { MessageBubbleComponent } from '../../../shared/components/message-bubbl
 import { MessageInputComponent } from '../../../shared/components/message-input/message-input.component';
 import * as ChatSelectors from '../../../store/chat/chat.selectors';
 import * as UserSelectors from '../../../store/user/user.selectors';
+import { selectCurrentTheme } from '../../../store/user/user.selectors';
 import { ChatUtil } from '../../../utils/ChatUtil';
 
 @Component({
@@ -71,14 +72,17 @@ import { ChatUtil } from '../../../utils/ChatUtil';
         display: flex;
         flex-direction: column;
         height: 100vh;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
       }
 
       .chat-header {
         display: flex;
         align-items: center;
         padding: 1rem;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-        background: white;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
       }
 
       .chat-avatar {
@@ -94,12 +98,13 @@ import { ChatUtil } from '../../../utils/ChatUtil';
         h2 {
           margin: 0;
           font-size: 1.1rem;
+          color: var(--text-primary);
         }
 
         .typing-status {
           margin: 0;
           font-size: 0.9rem;
-          color: rgba(0, 0, 0, 0.6);
+          color: var(--text-secondary);
         }
       }
 
@@ -107,14 +112,16 @@ import { ChatUtil } from '../../../utils/ChatUtil';
         flex: 1;
         overflow-y: auto;
         padding: 1rem;
-        background: #f5f5f5;
+        background: var(--bg-secondary);
+        transition: background-color 0.3s ease;
       }
 
       .initial-avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: pink;
+        background: #615ef0;
+        color: white;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -131,6 +138,7 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
   chatName$: Observable<string>;
   chatAvatar$: Observable<string>;
   typingStatus$: Observable<string>;
+  // currentTheme$: Observable<'light' | 'dark'>;
 
   private destroy$ = new Subject<void>();
 
@@ -138,6 +146,8 @@ export class ChatDetailComponent implements OnInit, OnDestroy {
     this.currentUserId$ = this.store
       .select(UserSelectors.selectCurrentUser)
       .pipe(map((user) => user?.id ?? ''));
+    
+    // this.currentTheme$ = this.store.select(selectCurrentTheme);
 
     this.chat$ = this.store
       .select(ChatSelectors.selectCurrentChat)

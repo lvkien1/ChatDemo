@@ -1,6 +1,9 @@
-import { Component, EventEmitter, Output, ElementRef, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Output, ElementRef, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
+import { selectCurrentTheme } from '../../../store/user/user.selectors';
 
 @Component({
   selector: 'app-message-input',
@@ -40,24 +43,33 @@ import { FormsModule } from '@angular/forms';
         align-items: flex-end;
         gap: 0.5rem;
         padding: 1rem;
-        background: white;
-        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        background: var(--bg-primary);
+        border-top: 1px solid var(--border-color);
+        transition: background-color 0.3s ease, border-color 0.3s ease;
       }
 
       textarea {
         flex: 1;
         padding: 0.5rem;
-        border: 1px solid rgba(0, 0, 0, 0.12);
+        border: 1px solid var(--border-color);
         border-radius: 1rem;
         resize: none;
         max-height: 150px;
         font-family: inherit;
         font-size: inherit;
         line-height: 1.5;
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 
         &:focus {
           outline: none;
-          border-color: #0084ff;
+          border-color: #615ef0;
+        }
+
+        &::placeholder {
+          color: var(--text-secondary);
+          opacity: 0.8;
         }
       }
 
@@ -71,15 +83,15 @@ import { FormsModule } from '@angular/forms';
         border-radius: 50%;
         background: transparent;
         cursor: pointer;
-        color: #0084ff;
-        transition: background-color 0.2s;
+        color: #615ef0;
+        transition: background-color 0.2s, color 0.3s ease;
 
         &:hover {
-          background: rgba(0, 132, 255, 0.1);
+          background: rgba(97, 94, 240, 0.1);
         }
 
         &:disabled {
-          color: rgba(0, 0, 0, 0.3);
+          color: var(--text-secondary);
           cursor: default;
 
           &:hover {
@@ -94,7 +106,7 @@ import { FormsModule } from '@angular/forms';
     `,
   ],
 })
-export class MessageInputComponent {
+export class MessageInputComponent implements OnInit {
   @Output() messageSent = new EventEmitter<string>();
   @Output() fileSelected = new EventEmitter<File>();
   @Output() typing = new EventEmitter<boolean>();
@@ -102,7 +114,16 @@ export class MessageInputComponent {
   @ViewChild('messageInput') messageInput!: ElementRef<HTMLTextAreaElement>;
 
   message: string = '';
+  currentTheme$: Observable<'light' | 'dark'>;
   private typingTimeout: NodeJS.Timeout | null = null;
+
+  constructor(private store: Store) {
+    this.currentTheme$ = this.store.select(selectCurrentTheme);
+  }
+
+  ngOnInit(): void {
+    // Initialization logic if needed
+  }
 
   onInputChange(): void {
     // Auto-resize textarea

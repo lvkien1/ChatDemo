@@ -101,7 +101,6 @@ export class UserService {
         isOnline: true,
         settings: {
           ...DEFAULT_USER_SETTINGS,
-          theme: 'light',
           lastUpdated: new Date(2025, 0, 1)
         }
       },

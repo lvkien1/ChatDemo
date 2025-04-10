@@ -4,10 +4,12 @@ import { RouterModule, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
+import { take, map } from 'rxjs/operators';
 
 import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 import { User } from '../../../core/models/user.model';
-import { selectCurrentUser } from '../../../store/user/user.selectors';
+import { selectCurrentUser, selectCurrentTheme } from '../../../store/user/user.selectors';
+import { UserActions } from '../../../store/user/user.actions';
 
 @Component({
   selector: 'app-navigation-sidebar',
@@ -50,6 +52,13 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
 
       <!-- Settings -->
       <div class="nav-footer">
+        <!-- Theme Toggle Button -->
+        <button class="nav-item" (click)="toggleTheme()">
+          <mat-icon *ngIf="(currentTheme$ | async) === 'light'">dark_mode</mat-icon>
+          <mat-icon *ngIf="(currentTheme$ | async) === 'dark'">light_mode</mat-icon>
+          <span class="nav-label">Toggle Theme</span>
+        </button>
+        
         <button class="nav-item" (click)="openSettings()">
           <mat-icon>settings</mat-icon>
           <span class="nav-label">Settings</span>
@@ -73,8 +82,8 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
         flex-direction: column;
         align-items: center;
         padding: 16px 0;
-        background: white;
-        border-right: 1px solid rgba(0, 0, 0, 0.08);
+        background: var(--bg-primary);
+        border-right: 1px solid var(--border-color);
         transition: width 0.3s ease;
         position: relative;
         z-index: 1;
@@ -108,7 +117,7 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
         gap: 12px;
         padding: 12px;
         border-radius: 8px;
-        color: rgba(0, 0, 0, 0.7);
+        color: var(--text-secondary);
         text-decoration: none;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -118,7 +127,7 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
         font: inherit;
 
         &:hover {
-          background: rgba(0, 0, 0, 0.04);
+          background: var(--hover-bg);
         }
 
         &.active {
@@ -131,7 +140,7 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
         }
 
         mat-icon {
-          color: rgba(0, 0, 0, 0.7);
+          color: var(--text-secondary);
         }
       }
 
@@ -145,18 +154,31 @@ import { selectCurrentUser } from '../../../store/user/user.selectors';
       .nav-footer {
         width: 100%;
         padding: 0 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
       }
     `,
   ],
 })
 export class NavigationSidebarComponent implements OnInit {
   currentUser$: Observable<User | null>;
+  currentTheme$: Observable<'light' | 'dark'>;
 
   constructor(private store: Store) {
     this.currentUser$ = this.store.select(selectCurrentUser);
+    this.currentTheme$ = this.store.select(selectCurrentTheme);
   }
 
   ngOnInit(): void {}
+
+  toggleTheme(): void {
+    this.currentTheme$.pipe(take(1)).subscribe(currentTheme => {
+      debugger
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      this.store.dispatch(UserActions.setTheme({ theme: newTheme }));
+    });
+  }
 
   openSettings(): void {
     // TODO: Implement settings dialog
