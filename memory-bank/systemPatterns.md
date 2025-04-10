@@ -1,7 +1,28 @@
 # System Design Patterns
 
-## Component Structure
-- Standalone components with explicit imports
+## Component Structure Standards
+1. File Organization:
+   - Each component in its own directory
+   - Consistent naming: [component-name].component.[ext]
+   - Separate files for HTML, TS, and SCSS
+   - Group related components by feature
+
+2. CSS Encapsulation:
+   - Mandatory :host selector for root styles
+   - Avoid global styles in components
+   - Use ::ng-deep sparingly for child components
+   - Example:
+     ```scss
+     :host {
+       display: block;
+       .component-class {
+         // Component-specific styles
+       }
+     }
+     ```
+
+3. Component Architecture:
+   - Standalone components with explicit imports
 - Feature-based folder structure
 - Shared components in shared module
 - Container/Presentation pattern where appropriate
