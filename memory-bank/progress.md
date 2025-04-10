@@ -1,6 +1,8 @@
 # Progress Status
 
 ## Completed Components
+- Component restructuring for proper file organization
+- CSS encapsulation with :host pattern implementation
 - Basic project structure
 - Core models (User, Message, Chat)
 - Core services (WebSocket, Chat, User)
@@ -19,8 +21,6 @@
 - Implemented proper error handling in chat effects
 
 ## In Progress
-- Component restructuring for proper file organization
-- CSS encapsulation with :host pattern implementation
 - Chat feature implementation
 - Message handling system
 - Real-time communication setup
