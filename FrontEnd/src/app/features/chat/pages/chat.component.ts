@@ -10,6 +10,7 @@ import { UserSelectors } from '../../../store/user';
 import * as ChatSelectors from '../../../store/chat/chat.selectors';
 import { ChatActions } from '../../../store/chat/chat.actions';
 import { ChatUtil } from '../../../utils/ChatUtil';
+import { selectCurrentTheme } from '../../../store/user/user.selectors';
 
 interface ChatViewModel {
   id: string;
@@ -82,14 +83,16 @@ interface ChatViewModel {
       .chat-container {
         display: flex;
         height: 100vh;
-        background: white;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
       }
 
       .chat-list {
         width: 320px;
-        border-right: 1px solid rgba(0, 0, 0, 0.12);
+        border-right: 1px solid var(--border-color);
         display: flex;
         flex-direction: column;
+        background-color: var(--bg-primary);
       }
 
       .chat-list-header {
@@ -97,11 +100,12 @@ interface ChatViewModel {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+        border-bottom: 1px solid var(--border-color);
 
         h2 {
           margin: 0;
           font-size: 1.25rem;
+          color: var(--text-primary);
         }
       }
 
@@ -127,7 +131,8 @@ interface ChatViewModel {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: pink;
+        background: #615ef0;
+        color: white;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -143,16 +148,16 @@ interface ChatViewModel {
         align-items: center;
         padding: 0.75rem 1rem;
         text-decoration: none;
-        color: inherit;
+        color: var(--text-primary);
         gap: 0.75rem;
         transition: background-color 0.2s;
 
         &:hover {
-          background: rgba(0, 0, 0, 0.05);
+          background: var(--hover-bg);
         }
 
         &.active {
-          background: rgba(0, 132, 255, 0.1);
+          background: rgba(97, 94, 240, 0.08);
         }
       }
 
@@ -170,11 +175,12 @@ interface ChatViewModel {
         .chat-name {
           font-weight: 500;
           margin-bottom: 0.25rem;
+          color: var(--text-primary);
         }
 
         .chat-preview {
           font-size: 0.875rem;
-          color: rgba(0, 0, 0, 0.6);
+          color: var(--text-secondary);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -189,11 +195,11 @@ interface ChatViewModel {
 
         .time {
           font-size: 0.75rem;
-          color: rgba(0, 0, 0, 0.6);
+          color: var(--text-secondary);
         }
 
         .unread-count {
-          background: #0084ff;
+          background: #615ef0;
           color: white;
           font-size: 0.75rem;
           padding: 0.125rem 0.375rem;
@@ -207,12 +213,14 @@ interface ChatViewModel {
         flex: 1;
         display: flex;
         flex-direction: column;
+        background-color: var(--bg-secondary);
       }
     `,
   ],
 })
 export class ChatComponent implements OnInit {
   chatViewModels$: Observable<ChatViewModel[]>;
+  currentTheme$: Observable<'light' | 'dark'>;
   ChatUtil = ChatUtil;
 
   constructor(private store: Store) {
@@ -220,6 +228,7 @@ export class ChatComponent implements OnInit {
     const currentUserId$ = this.store
       .select(UserSelectors.selectCurrentUser)
       .pipe(map((user) => user?.id ?? ''));
+    this.currentTheme$ = this.store.select(selectCurrentTheme);
 
     this.chatViewModels$ = combineLatest([chats$, currentUserId$]).pipe(
       map(([chats, userId]) =>

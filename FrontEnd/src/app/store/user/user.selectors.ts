@@ -1,12 +1,22 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { UserState } from './user.reducer';
-import { User } from '../../core/models/user.model';
+import { User, UserSettings } from '../../core/models/user.model';
 
 export const selectUserState = createFeatureSelector<UserState>('user');
 
 export const selectCurrentUser = createSelector(
   selectUserState,
   (state) => state.currentUser
+);
+
+export const selectUserSettings = createSelector(
+  selectUserState,
+  (state) => state.settings
+);
+
+export const selectCurrentTheme = createSelector(
+  selectUserSettings,
+  (settings) => settings?.theme || 'light'
 );
 
 export const selectAllUsers = createSelector(

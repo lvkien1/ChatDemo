@@ -17,7 +17,7 @@ export interface UserProfile extends BaseUser {
 }
 
 export interface UserSettings {
-  theme: 'light' | 'dark';
+  theme?: 'light' | 'dark';
   enableNotifications: boolean;
   soundEnabled: boolean;
   showReadReceipts: boolean;
@@ -51,7 +51,6 @@ export interface UpdateProfileDto extends Partial<BaseUser> {
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
-  theme: 'light',
   enableNotifications: true,
   soundEnabled: true,
   showReadReceipts: true,

@@ -1,5 +1,5 @@
 import { createReducer, on } from '@ngrx/store';
-import { User, UserProfile, UserSettings } from '../../core/models/user.model';
+import { User, UserProfile, UserSettings, DEFAULT_USER_SETTINGS } from '../../core/models/user.model';
 import { UserActions } from './user.actions';
 
 export interface UserState {
@@ -32,7 +32,7 @@ export const userReducer = createReducer(
     ...state,
     currentUser: user,
     loading: false,
-    settings: user.settings
+    settings: state?.settings && state.settings.theme ? { ...user.settings, theme: state.settings.theme } : user.settings
   })),
 
   on(UserActions.loadCurrentUserFailure, (state, { error }) => ({
@@ -130,7 +130,7 @@ export const userReducer = createReducer(
     ...state,
     settings: state.settings
       ? { ...state.settings, theme }
-      : null
+      : { ...DEFAULT_USER_SETTINGS, theme } // Sử dụng mặc định và ghi đè theme
   })),
 
   // User Status
