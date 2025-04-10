@@ -1,6 +1,8 @@
 # Active Development Context
 
 ## Current Focus
+- Component restructuring for file organization standards
+- Implementing CSS encapsulation with :host selector
 - File handling and preview functionality
 - Type safety improvements in state management
 - Chat service message handling

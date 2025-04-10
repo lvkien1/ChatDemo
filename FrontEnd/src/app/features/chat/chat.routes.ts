@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { ChatDetailComponent } from './pages/chat-detail.component';
-import { ChatComponent } from './pages/chat.component';
+import { ChatComponent } from './pages/chat/chat.component';
+import { ChatDetailComponent } from './pages/chat-detail/chat-detail.component';
 
 export const routes: Routes = [
   {
@@ -9,8 +9,8 @@ export const routes: Routes = [
     children: [
       {
         path: ':id',
-        component: ChatDetailComponent
-      }
-    ]
-  }
+        component: ChatDetailComponent,
+      },
+    ],
+  },
 ];
