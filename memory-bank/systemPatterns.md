@@ -5,6 +5,23 @@
 - Feature-based folder structure
 - Shared components in shared module
 - Container/Presentation pattern where appropriate
+- Component file organization:
+  - Each component in its own directory
+  - Separate files for HTML, TS, and SCSS
+  - Component name as prefix for all files (e.g., `message-bubble.component.ts`)
+- CSS encapsulation using `:host` selector:
+  ```scss
+  // Example of proper component styling
+  :host {
+    .component-class {
+      // Styles here
+    }
+    
+    ::ng-deep {
+      // Styles for child components
+    }
+  }
+  ```
 
 ## State Management
 - NGRX store for global state

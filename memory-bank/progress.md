@@ -19,6 +19,8 @@
 - Implemented proper error handling in chat effects
 
 ## In Progress
+- Component restructuring for proper file organization
+- CSS encapsulation with :host pattern implementation
 - Chat feature implementation
 - Message handling system
 - Real-time communication setup
@@ -51,6 +53,8 @@
 - Need to implement proper error boundaries
 
 ## Recent Improvements
+- Updated component structure standards for CSS encapsulation
+- Started component restructuring for proper file organization
 - Added type safety for message attachments
 - Improved chat service with file handling
 - Enhanced store selectors for better performance

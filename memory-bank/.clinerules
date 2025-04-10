@@ -10,6 +10,10 @@
   - `.scss` for component styles
 - Place each component in its own directory
 - Name popup components with 'Popup' prefix (e.g., `PopupConfirm`, `PopupSettings`)
+- CSS Encapsulation:
+  - All SCSS rules must be wrapped in `:host` selector
+  - Use `::ng-deep` inside `:host` when needed to style child components
+  - Avoid global styles outside of `:host` to prevent styling conflicts
 
 ## Project Context
 - Chat Web App UI implementation based on Figma design

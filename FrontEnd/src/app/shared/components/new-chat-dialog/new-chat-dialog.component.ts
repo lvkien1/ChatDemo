@@ -29,67 +29,8 @@ import { UserActions } from '../../../store/user/user.actions';
     MatChipsModule,
     ReactiveFormsModule
   ],
-  template: `
-    <div class="new-chat-dialog">
-      <h2 mat-dialog-title>New Chat</h2>
-      
-      <form [formGroup]="chatForm" (ngSubmit)="onSubmit()">
-        <mat-dialog-content>
-          <div class="dialog-content">
-            <mat-form-field appearance="fill" class="full-width">
-              <mat-label>Chat Type</mat-label>
-              <mat-select formControlName="type">
-                <mat-option value="direct">Direct Message</mat-option>
-                <mat-option value="group">Group Chat</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="fill" class="full-width" *ngIf="chatForm.get('type')?.value === 'group'">
-              <mat-label>Group Name</mat-label>
-              <input matInput formControlName="name" placeholder="Enter group name">
-            </mat-form-field>
-
-            <mat-form-field appearance="fill" class="full-width">
-              <mat-label>Participants</mat-label>
-              <mat-select formControlName="participants" multiple>
-                <mat-option *ngFor="let user of availableUsers$ | async" [value]="user.id">
-                  {{ user.name }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-        </mat-dialog-content>
-
-        <mat-dialog-actions align="end">
-          <button mat-button type="button" (click)="onCancel()">Cancel</button>
-          <button mat-raised-button color="primary" type="submit" [disabled]="!chatForm.valid">
-            Create Chat
-          </button>
-        </mat-dialog-actions>
-      </form>
-    </div>
-  `,
-  styles: [`
-    .new-chat-dialog {
-      padding: 24px;
-      min-width: 400px;
-    }
-
-    .dialog-content {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .full-width {
-      width: 100%;
-    }
-
-    mat-dialog-actions {
-      margin-top: 24px;
-      gap: 8px;
-    }
-  `]
+  templateUrl: './new-chat-dialog.component.html',
+  styleUrls: ['./new-chat-dialog.component.scss']
 })
 export class NewChatDialogComponent implements OnInit {
   chatForm: FormGroup;
@@ -132,12 +73,10 @@ export class NewChatDialogComponent implements OnInit {
 
   onSubmit(): void {
     if (this.chatForm.valid) {
-      const { type, name, participants } = this.chatForm.value;
+      const { participants } = this.chatForm.value;
       
       this.store.dispatch(ChatActions.createChat({ 
-        type,
-        name: type === 'group' ? name : undefined,
-        participants 
+        userIds: participants
       }));
 
       this.dialogRef.close();
